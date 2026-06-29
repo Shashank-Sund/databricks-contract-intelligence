@@ -71,6 +71,8 @@ persists across reloads.
   **[`examples/northwind-health/README.md`](examples/northwind-health/README.md)**.
 - **Adapt it to your own data:** the click-by-click guide is
   **[`DEPLOY.md`](DEPLOY.md)**.
+- **Make it yours (branding, prompts, model, AI Gateway, logging):**
+  **[`CUSTOMIZE.md`](CUSTOMIZE.md)**.
 - **The notebooks you run:** [`notebooks/`](notebooks/) —
   `01_extract_contract_terms.py`, `02_build_document_search_index.py`,
   `03_create_genie_space.py`.
@@ -86,6 +88,7 @@ persists across reloads.
 ├── setup/                 # generic helpers: build a search index, chat_history, governance recipe
 ├── app.yaml               # Databricks App runtime config (sets APP_CONFIG_PATH, AUTH_MODE, IDs)
 ├── DEPLOY.md              # adopt-it-to-your-data guide
+├── CUSTOMIZE.md           # change branding, prompts, model, AI Gateway, logging
 └── examples/
     └── northwind-health/  ← A COMPLETE EXAMPLE INSTANCE (fictional Northwind Health)
         ├── config.json    # filled-in config (catalog northwind / schema contract_intelligence)

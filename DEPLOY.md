@@ -171,7 +171,9 @@ Genie *and* the agent.
 
 ## Reference: the config file
 See `config/app.json` (the documented template) and
-`examples/northwind-health/config.json` (a complete, working instance).
+`examples/northwind-health/config.json` (a complete, working instance). To change
+branding/identity, the system prompts, the model, AI Gateway, or logging, see
+**[`CUSTOMIZE.md`](CUSTOMIZE.md)**.
 
 ## Troubleshooting
 | Symptom | Fix |
