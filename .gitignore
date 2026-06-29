@@ -57,7 +57,9 @@ client_old_backup/
 *conf*.json
 !**/tsconfig*.json
 
-client/out/
+# The prebuilt React UI SHIPS in the repo so the app deploys with just
+# sync + deploy (no Node toolchain required). Keep client/out/ tracked.
+!client/out/
 
 # Example instance configs (must ship in the repo)
 !examples/**/config.json

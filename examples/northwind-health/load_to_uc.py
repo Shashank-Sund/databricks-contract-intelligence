@@ -80,19 +80,24 @@ except NameError:
 # COMMAND ----------
 
 # 3. Delta tables from parquet -----------------------------------------
-#    Read the local parquet with Spark, then write managed Delta tables.
-claims_pq = f"file:{os.path.join(DATA_DIR, 'claims.parquet')}"
-terms_pq = f"file:{os.path.join(DATA_DIR, 'contract_terms.parquet')}"
+#    Read via pandas, not spark.read.parquet: Serverless Spark rejects parquet
+#    INT64 TIMESTAMP(NANOS) ([PARQUET_TYPE_ILLEGAL]) and the vectorized-reader
+#    config workaround is blocked on serverless. We downcast ns timestamps to
+#    microseconds (Spark's supported precision) before createDataFrame.
+import pandas as pd
 
-(spark.read.parquet(claims_pq)
-      .write.mode("overwrite").option("overwriteSchema", "true")
-      .saveAsTable(f"{CATALOG}.{SCHEMA}.claims"))
-print(f"  wrote table {CATALOG}.{SCHEMA}.claims")
+def _write_delta(parquet_path, table_name):
+    pdf = pd.read_parquet(parquet_path)
+    for col in pdf.columns:
+        if str(pdf[col].dtype).startswith("datetime64[ns"):
+            pdf[col] = pdf[col].astype("datetime64[us]")
+    (spark.createDataFrame(pdf)
+          .write.mode("overwrite").option("overwriteSchema", "true")
+          .saveAsTable(f"{CATALOG}.{SCHEMA}.{table_name}"))
+    print(f"  wrote table {CATALOG}.{SCHEMA}.{table_name}")
 
-(spark.read.parquet(terms_pq)
-      .write.mode("overwrite").option("overwriteSchema", "true")
-      .saveAsTable(f"{CATALOG}.{SCHEMA}.contract_terms"))
-print(f"  wrote table {CATALOG}.{SCHEMA}.contract_terms")
+_write_delta(os.path.join(DATA_DIR, 'claims.parquet'), "claims")
+_write_delta(os.path.join(DATA_DIR, 'contract_terms.parquet'), "contract_terms")
 
 spark.sql(f"COMMENT ON TABLE {CATALOG}.{SCHEMA}.claims IS "
           f"'Synthetic 837/835 claim lifecycle. Joins to contract_terms on (payer_name, drg_code) or (payer_name, cpt_code).'")

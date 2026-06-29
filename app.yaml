@@ -8,7 +8,7 @@ env:
   # Your workspace URL, e.g. https://<workspace>.cloud.databricks.com or
   # https://<workspace>.azuredatabricks.net  (REPLACE THIS).
   - name: DATABRICKS_HOST
-    value: "https://<your-workspace-host>"
+    value: "https://<your-workspace>.cloud.databricks.com"
 
   # Which app config to load. Point this at your own config (config/app.json) or
   # at an example instance. The included Northwind Health example is at
@@ -18,9 +18,9 @@ env:
 
   # Unity Catalog target (must match the loaded config `uc` block).
   - name: CATALOG
-    value: "<your_catalog>"
+    value: "northwind"
   - name: SCHEMA
-    value: "<your_schema>"
+    value: "contract_intelligence"
   - name: HISTORY_TABLE
     value: chat_history
   # Chat-history backend: delta (reliable, zero extra infra) or lakebase.

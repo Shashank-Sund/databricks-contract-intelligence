@@ -112,9 +112,19 @@ print(f"Created (or reused) {FQN} and volume '{VOLUME}'.")
 
 # COMMAND ----------
 
+import pandas as pd
+
 def load_table(parquet_name, table_name, comment):
-    src = f"file:{DATA_WS}/{parquet_name}"
-    (spark.read.parquet(src)
+    # We read via pandas rather than spark.read.parquet: Serverless Spark rejects
+    # parquet INT64 TIMESTAMP(NANOS) with [PARQUET_TYPE_ILLEGAL], and the usual
+    # escape hatch (spark.conf "enableVectorizedReader=false") is itself blocked on
+    # serverless. pandas reads ns timestamps fine; we downcast them to microseconds
+    # (Spark's supported precision) before creating the DataFrame.
+    pdf = pd.read_parquet(f"{DATA_WS}/{parquet_name}")
+    for col in pdf.columns:
+        if str(pdf[col].dtype).startswith("datetime64[ns"):
+            pdf[col] = pdf[col].astype("datetime64[us]")
+    (spark.createDataFrame(pdf)
          .write.mode("overwrite").option("overwriteSchema", "true")
          .saveAsTable(f"{FQN}.{table_name}"))
     spark.sql(f"COMMENT ON TABLE {FQN}.{table_name} IS '{comment}'")
