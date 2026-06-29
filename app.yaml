@@ -1,0 +1,47 @@
+command: ["sh", "-c", "uvicorn server.app:app --host 0.0.0.0 --port $DATABRICKS_APP_PORT"]
+
+env:
+  # Databricks Apps injects the service principal's OAuth creds in production.
+  - name: ENV
+    value: production
+
+  # Your workspace URL, e.g. https://<workspace>.cloud.databricks.com or
+  # https://<workspace>.azuredatabricks.net  (REPLACE THIS).
+  - name: DATABRICKS_HOST
+    value: "https://<your-workspace-host>"
+
+  # Which app config to load. Point this at your own config (config/app.json) or
+  # at an example instance. The included Northwind Health example is at
+  # examples/northwind-health/config.json.
+  - name: APP_CONFIG_PATH
+    value: "examples/northwind-health/config.json"
+
+  # Unity Catalog target (must match the loaded config `uc` block).
+  - name: CATALOG
+    value: "<your_catalog>"
+  - name: SCHEMA
+    value: "<your_schema>"
+  - name: HISTORY_TABLE
+    value: chat_history
+  # Chat-history backend: delta (reliable, zero extra infra) or lakebase.
+  - name: HISTORY_BACKEND
+    value: delta
+
+  # How the app authenticates user-scoped calls (Genie): obo (default) runs as the
+  # signed-in user so Unity Catalog masks apply; service_principal always uses the
+  # app's service principal. See server/services/credentials.py.
+  - name: AUTH_MODE
+    value: obo
+
+  # Serverless SQL warehouse (Genie tool, history, document parsing). REPLACE.
+  - name: WAREHOUSE_ID
+    value: "<your_sql_warehouse_id>"
+
+  # Default Genie space the supervisor's genie tool uses (REPLACE). Per-tool
+  # space_id values in the config override this.
+  - name: GENIE_SPACE_ID
+    value: "<your_genie_space_id>"
+
+  # Emails allowed to see all users' history (empty = each sees only their own).
+  - name: STEWARD_EMAILS
+    value: ""

@@ -1,0 +1,87 @@
+{
+  "_README": "This is the TEMPLATE config. Edit it for your own deployment, or copy it to examples/<your-instance>/config.json and point APP_CONFIG_PATH at that copy (see DEPLOY.md). A complete, filled-in example lives in examples/northwind-health/config.json.",
+
+  "app_name": "contract-intelligence",
+  "branding": {
+    "name": "Contract Intelligence",
+    "tagline": "Your data and your documents, answered together",
+    "subtitle": ""
+  },
+  "home": {
+    "title": "Contract Intelligence",
+    "description": "Ask questions about your data and your documents. The assistant queries your tables through a Genie space and searches your documents through grounded retrieval, then answers with the numbers and the source text together.",
+    "_suggestions_help": "Optional. Starter prompt buttons shown on the empty home screen. Tailor them to your domain.",
+    "suggestions": [
+      "Summarize what this assistant can help me with.",
+      "What questions can I ask about my data?",
+      "What can you find in my documents?",
+      "Give me an example of a question that uses both my data and my documents."
+    ]
+  },
+
+  "agent": {
+    "_comment": "The agent's persona and tools. 'backend' must be 'genie' (a Genie space) or 'vector_search' (the rag index below). Add/rename tools freely; the descriptions are what the model routes on.",
+    "_multi_genie_help": "You can list SEVERAL genie tools, each with its own \"space_id\" + a description of what that space covers, so the agent routes a question to the right space. A genie tool with no \"space_id\" uses the default genie.space_id below.",
+    "system_prompt": "You are a data assistant. Answer questions using the tools provided. Some tools query structured data (returning tables); others search documents (returning grounded text with citations). For a question that needs both, call the relevant tools and combine the results into one clear answer. Quote the citations returned by document tools and state numbers precisely. If a tool is not configured or returns an error, say so plainly and answer with whatever you do have.",
+    "tools": [
+      {
+        "name": "query_data",
+        "backend": "genie",
+        "description": "Answer a quantitative/analytical question by running governed SQL over the data via the Genie space. Returns a table and the SQL.",
+        "question_description": "A clear, self-contained natural-language data question.",
+        "_space_id_help": "Optional. Set \"space_id\": \"<id>\" to pin this tool to a specific Genie space; omit it to use the default genie.space_id."
+      },
+      {
+        "name": "search_documents",
+        "backend": "vector_search",
+        "description": "Answer a question from the document corpus using grounded retrieval. Returns an answer with source citations.",
+        "question_description": "A clear, self-contained natural-language question about the documents.",
+        "_scope_filter_help": "Optional. To keep a question about one entity from being answered with another's similarly-worded text, add: \"scope_filter\": {\"column\": \"source_file\", \"entities\": {\"<Name>\": {\"aliases\": [\"...\"], \"values\": [\"file1.pdf\"]}}}"
+      }
+    ]
+  },
+
+  "auth_mode": "obo",
+  "_auth_mode_help": "How the app authenticates user-scoped calls (Genie). 'obo' (default) = run as the signed-in user so Unity Catalog permissions/masks apply, with a service-principal fallback; 'service_principal' = always use the app's service principal. Override with the AUTH_MODE env var in app.yaml.",
+
+  "supervisor": {
+    "_comment": "The model that runs the agent's tool-calling loop. Any chat (OpenAI-style) serving endpoint in your workspace.",
+    "endpoint": "databricks-claude-sonnet-4-6",
+    "max_tokens": 4000,
+    "max_tool_iterations": 6
+  },
+
+  "rag": {
+    "_comment": "The document-search (RAG) tool. Point vector_search_index at the index built by notebooks/02_build_document_search_index.py. generation_endpoint writes the grounded answer.",
+    "generation_endpoint": "databricks-claude-opus-4-8",
+    "vector_search_index": "<your_catalog>.<your_schema>.<your_docs>_index",
+    "num_results": 10,
+    "columns": ["chunk_id", "source_file", "page_id", "text"],
+    "system_prompt": ""
+  },
+
+  "genie": {
+    "_comment": "The DEFAULT Genie space (used by any genie tool that does not set its own space_id). Create it in the Databricks UI on your tables, curate its instructions, then paste its space id here (or set GENIE_SPACE_ID). See notebooks/03_create_genie_space.py and DEPLOY.md.",
+    "space_id": "<your_genie_space_id>",
+    "poll_seconds": 3,
+    "poll_max_attempts": 40
+  },
+
+  "warehouse_id": "<your_sql_warehouse_id>",
+
+  "uc": {
+    "catalog": "<your_catalog>",
+    "schema": "<your_schema>",
+    "history_table": "chat_history"
+  },
+
+  "history": {
+    "_comment": "delta (default, uses the SQL warehouse + a Delta table) or lakebase (managed Postgres). Override with HISTORY_BACKEND.",
+    "backend": "delta"
+  },
+
+  "upload": {
+    "max_pages": 100,
+    "max_mb": 50
+  }
+}

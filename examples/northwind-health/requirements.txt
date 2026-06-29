@@ -1,0 +1,17 @@
+# Generation dependencies for the synthetic contract-intelligence demo data.
+#
+# Two toolchains are used:
+#   * generate_contracts.py  -> reportlab (PDF rendering; pulls in pillow)
+#   * generate_claims.py / generate_contract_terms.py -> pandas, pyarrow, numpy, faker
+#
+# Pinned to versions verified during generation. Newer minors are fine.
+reportlab>=4.0,<5.0
+pandas>=2.0,<3.0
+pyarrow>=14.0
+numpy>=1.26,<2.0
+Faker>=20.0
+
+# Optional: only needed if you run load_to_uc.py outside a Databricks notebook
+# (i.e. via Databricks Connect / the Files API).
+# databricks-sdk>=0.30
+# databricks-connect

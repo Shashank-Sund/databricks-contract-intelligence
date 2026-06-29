@@ -1,0 +1,10 @@
+# Runtime dependencies for the Databricks App (server/).
+fastapi
+uvicorn[standard]
+httpx
+python-dotenv
+pydantic
+databricks-sdk
+
+# Optional: only needed when history.backend = "lakebase" (managed Postgres).
+# psycopg[binary]

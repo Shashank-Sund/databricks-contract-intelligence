@@ -1,0 +1,63 @@
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+app.yaml.local
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+
+# Python virtual environment
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+client/node_modules/
+client/dist/
+client/.next/
+
+# Build output
+dist/
+
+# Databricks
+.databricks/
+.databricksignore.local
+
+# Editors
+.vscode/
+.vscode/settings.json
+.idea/
+.claude/settings.local.json
+
+# Misc / scratch
+.helper_files/
+summary.md
+
+# Backups
+client_old_backup/
+
+# Unnecessary configs
+*conf*.json
+!**/tsconfig*.json
+
+client/out/
+
+# Example instance configs (must ship in the repo)
+!examples/**/config.json

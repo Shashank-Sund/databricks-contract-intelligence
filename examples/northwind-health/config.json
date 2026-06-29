@@ -1,0 +1,92 @@
+{
+  "_README": "Filled-in EXAMPLE instance config for the fictional Northwind Health. Everything is synthetic. Replace the Genie space id and warehouse id placeholders with your own after running setup.py and creating the Genie space (see README.md). To run the app against this example, set APP_CONFIG_PATH=examples/northwind-health/config.json (the repo app.yaml already does).",
+
+  "app_name": "contract-intelligence",
+  "branding": {
+    "name": "Contract Intelligence",
+    "tagline": "Payer contracts + revenue cycle, answered",
+    "subtitle": "Northwind Health (synthetic demo)"
+  },
+  "home": {
+    "title": "Contract Intelligence",
+    "description": "Ask about payer contracts, reimbursement, denials, and revenue leakage. The assistant reads your claims data through Genie and your contract documents through grounded search, then answers with the numbers and the contract language together.",
+    "suggestions": [
+      "Which payers underpaid us last quarter versus our contracted rates?",
+      "What did Amendment A-1 change about the UnitedHealthcare fee schedule?",
+      "Show Cigna's timely-filing denials by quarter. When did they spike?",
+      "Compare timely-filing and appeal windows across all our payer contracts."
+    ]
+  },
+
+  "agent": {
+    "_multi_genie_help": "This example uses one Genie space. To route across several, give each genie tool its own \"space_id\" plus a description (see notebooks/03_create_genie_space.py).",
+    "system_prompt": "You are Contract Intelligence, a payer-contract and revenue-cycle assistant for Northwind Health's managed care and revenue-cycle team.\n\nYou have two tools:\n  - genie_query: for QUANTITATIVE questions about claims, payments, denials, denial rates, underpayments, revenue leakage, reimbursement variance, dollars, counts, trends by payer/DRG/CPT/quarter. This runs governed SQL over the claims data and returns a table plus the SQL.\n  - contract_search: for QUALITATIVE questions about contract documents and clauses, timely-filing and appeal windows, prior-auth rules, reimbursement methodology, renewal/termination terms, carve-outs, what an amendment changed, or what a contract allows/requires. This returns grounded text with citations.\n\nRouting rules:\n  - Pure numbers question -> genie_query.\n  - Pure contract-language question -> contract_search.\n  - COMPOUND question (asks both what the data shows AND what the contract says, e.g. 'did United pay the contracted rate for DRG 470, and what does the contract allow?') -> call BOTH tools, then combine the data finding and the contract language into one answer.\n\nWhen you cite contract language, keep the source-file/page citations from contract_search. When you report numbers, state them precisely. After tool results come back, write a clear, concise answer for a revenue-cycle analyst. If a tool reports it is not configured or returns an error, say so plainly and answer with whatever you do have. You do not give legal advice.",
+    "tools": [
+      {
+        "name": "genie_query",
+        "backend": "genie",
+        "description": "Answer a quantitative question about claims, payments, denials, denial rates, underpayments, revenue leakage, or reimbursement variance by running governed SQL over the claims data. Returns a table and the SQL.",
+        "question_description": "A clear, self-contained natural-language data question."
+      },
+      {
+        "name": "contract_search",
+        "backend": "vector_search",
+        "description": "Answer a question about payer contract documents and clauses (timely filing, appeals, prior auth, reimbursement methodology, renewal/termination, carve-outs, amendments) using grounded retrieval over the contract PDFs. Returns an answer with source-file citations.",
+        "question_description": "A clear, self-contained natural-language contract question.",
+        "scope_filter": {
+          "column": "source_file",
+          "entities": {
+            "UnitedHealthcare": {"aliases": ["unitedhealthcare", "united healthcare", "uhc", "united health"], "values": ["NWH-2024-001_UnitedHealthcare.pdf", "AMENDMENT_A-1_UnitedHealthcare.pdf"]},
+            "Aetna": {"aliases": ["aetna"], "values": ["NWH-2024-002_Aetna.pdf"]},
+            "Anthem": {"aliases": ["anthem", "blue cross", "blue shield", "bcbs"], "values": ["NWH-2024-003_Anthem_Blue_Cross_Blue_Shield.pdf"]},
+            "Cigna": {"aliases": ["cigna"], "values": ["NWH-2024-004_Cigna.pdf", "AMENDMENT_A-2_Cigna.pdf"]},
+            "Humana": {"aliases": ["humana"], "values": ["NWH-2024-005_Humana.pdf"]},
+            "Wellcare": {"aliases": ["wellcare", "medicare advantage"], "values": ["NWH-2024-006_Medicare_Advantage_Wellcare.pdf"]},
+            "Sagebrush": {"aliases": ["sagebrush"], "values": ["NWH-2024-007_Sagebrush_Regional_Health_Plan.pdf"]},
+            "Pioneer": {"aliases": ["pioneer", "medicaid mco"], "values": ["NWH-2024-008_Pioneer_Valley_Medicaid_MCO.pdf"]}
+          }
+        }
+      }
+    ]
+  },
+
+  "auth_mode": "obo",
+
+  "supervisor": {
+    "endpoint": "databricks-claude-sonnet-4-6",
+    "max_tokens": 4000,
+    "max_tool_iterations": 6
+  },
+
+  "rag": {
+    "generation_endpoint": "databricks-claude-opus-4-8",
+    "vector_search_index": "northwind.contract_intelligence.contract_chunks_index",
+    "num_results": 10,
+    "columns": ["chunk_id", "source_file", "page_id", "text"],
+    "system_prompt": "You are a payer-contract analyst for Northwind Health. Answer the question using ONLY the contract excerpts provided. Quote the relevant contract language and ALWAYS cite the source file (and page when shown) like \"(NWH-2024-004_Cigna.pdf, page 2)\". If the excerpts do not contain the answer, say so plainly rather than guessing. Be concise and precise; this affects reimbursement decisions."
+  },
+
+  "genie": {
+    "_comment": "Set this to your Genie space id after you create it (README.md, Phase 2). Or set the GENIE_SPACE_ID env var in app.yaml.",
+    "space_id": "<your_genie_space_id>",
+    "poll_seconds": 3,
+    "poll_max_attempts": 40
+  },
+
+  "warehouse_id": "<your_sql_warehouse_id>",
+
+  "uc": {
+    "catalog": "northwind",
+    "schema": "contract_intelligence",
+    "history_table": "chat_history"
+  },
+
+  "history": {
+    "backend": "delta"
+  },
+
+  "upload": {
+    "max_pages": 100,
+    "max_mb": 50
+  }
+}

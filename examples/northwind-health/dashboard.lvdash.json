@@ -1,0 +1,484 @@
+{
+  "datasets": [
+    {
+      "name": "kpis",
+      "displayName": "KPIs",
+      "queryLines": [
+        "SELECT COUNT(*) AS total_claims, SUM(CASE WHEN claim_status='denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(SUM(CASE WHEN claim_status='denied' THEN 1 ELSE 0 END)/COUNT(*),4) AS denial_rate FROM northwind.contract_intelligence.claims"
+      ]
+    },
+    {
+      "name": "underpayment",
+      "displayName": "Underpayment by payer",
+      "queryLines": [
+        "SELECT payer_name, ROUND(SUM(underpayment_dollars),2) AS underpayment FROM northwind.contract_intelligence.underpayment_dollars_by_payer_drg GROUP BY payer_name ORDER BY underpayment DESC"
+      ]
+    },
+    {
+      "name": "denial",
+      "displayName": "Denial rate by payer",
+      "queryLines": [
+        "SELECT payer_name, ROUND(SUM(denied_claims)/SUM(total_claims),4) AS denial_rate FROM northwind.contract_intelligence.denial_rate_by_payer GROUP BY payer_name ORDER BY denial_rate DESC"
+      ]
+    },
+    {
+      "name": "variance",
+      "displayName": "Variance by quarter",
+      "queryLines": [
+        "SELECT service_quarter, ROUND(SUM(variance_amount),2) AS variance_amount FROM northwind.contract_intelligence.reimbursement_variance GROUP BY service_quarter ORDER BY service_quarter"
+      ]
+    },
+    {
+      "name": "renewal",
+      "displayName": "Renewal risk",
+      "queryLines": [
+        "SELECT payer_name, term_date, days_to_renewal, renewal_window, total_underpayment, denial_rate FROM northwind.contract_intelligence.renewal_risk ORDER BY days_to_renewal"
+      ]
+    },
+    {
+      "name": "topdrg",
+      "displayName": "Top DRG leaks",
+      "queryLines": [
+        "SELECT payer_name, drg_code, drg_description, ROUND(SUM(underpayment_dollars),2) AS underpayment FROM northwind.contract_intelligence.underpayment_dollars_by_payer_drg GROUP BY payer_name, drg_code, drg_description ORDER BY underpayment DESC LIMIT 10"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Revenue Cycle",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Contract Intelligence \u2014 Revenue Cycle Overview"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Payer underpayments, denials, and renewal risk for Northwind Health (synthetic demo data)."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_claims",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "kpis",
+                  "fields": [
+                    {
+                      "name": "sum(total_claims)",
+                      "expression": "SUM(`total_claims`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total_claims)",
+                  "displayName": "Total claims"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_underpay",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "underpayment",
+                  "fields": [
+                    {
+                      "name": "sum(underpayment)",
+                      "expression": "SUM(`underpayment`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(underpayment)",
+                  "displayName": "Total underpayment ($)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_denial",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "kpis",
+                  "fields": [
+                    {
+                      "name": "max(denial_rate)",
+                      "expression": "MAX(`denial_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "max(denial_rate)",
+                  "displayName": "Overall denial rate"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_underpayment",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "underpayment",
+                  "fields": [
+                    {
+                      "name": "payer_name",
+                      "expression": "`payer_name`"
+                    },
+                    {
+                      "name": "sum(underpayment)",
+                      "expression": "SUM(`underpayment`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "payer_name",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Payer"
+                },
+                "y": {
+                  "fieldName": "sum(underpayment)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Underpayment ($)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_denial",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "denial",
+                  "fields": [
+                    {
+                      "name": "payer_name",
+                      "expression": "`payer_name`"
+                    },
+                    {
+                      "name": "max(denial_rate)",
+                      "expression": "MAX(`denial_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "payer_name",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Payer"
+                },
+                "y": {
+                  "fieldName": "max(denial_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Denial rate"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "line_variance",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "variance",
+                  "fields": [
+                    {
+                      "name": "service_quarter",
+                      "expression": "`service_quarter`"
+                    },
+                    {
+                      "name": "sum(variance_amount)",
+                      "expression": "SUM(`variance_amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "service_quarter",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Quarter"
+                },
+                "y": {
+                  "fieldName": "sum(variance_amount)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Variance ($)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "tbl_renewal",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "renewal",
+                  "fields": [
+                    {
+                      "name": "payer_name",
+                      "expression": "`payer_name`"
+                    },
+                    {
+                      "name": "term_date",
+                      "expression": "`term_date`"
+                    },
+                    {
+                      "name": "days_to_renewal",
+                      "expression": "`days_to_renewal`"
+                    },
+                    {
+                      "name": "renewal_window",
+                      "expression": "`renewal_window`"
+                    },
+                    {
+                      "name": "total_underpayment",
+                      "expression": "`total_underpayment`"
+                    },
+                    {
+                      "name": "denial_rate",
+                      "expression": "`denial_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "payer_name",
+                    "displayName": "Payer"
+                  },
+                  {
+                    "fieldName": "term_date",
+                    "displayName": "Term date"
+                  },
+                  {
+                    "fieldName": "days_to_renewal",
+                    "displayName": "Days to renewal"
+                  },
+                  {
+                    "fieldName": "renewal_window",
+                    "displayName": "Window"
+                  },
+                  {
+                    "fieldName": "total_underpayment",
+                    "displayName": "Underpayment ($)"
+                  },
+                  {
+                    "fieldName": "denial_rate",
+                    "displayName": "Denial rate"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tbl_topdrg",
+            "queries": [
+              {
+                "name": "q",
+                "query": {
+                  "datasetName": "topdrg",
+                  "fields": [
+                    {
+                      "name": "payer_name",
+                      "expression": "`payer_name`"
+                    },
+                    {
+                      "name": "drg_code",
+                      "expression": "`drg_code`"
+                    },
+                    {
+                      "name": "drg_description",
+                      "expression": "`drg_description`"
+                    },
+                    {
+                      "name": "underpayment",
+                      "expression": "`underpayment`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "payer_name",
+                    "displayName": "Payer"
+                  },
+                  {
+                    "fieldName": "drg_code",
+                    "displayName": "DRG"
+                  },
+                  {
+                    "fieldName": "drg_description",
+                    "displayName": "Description"
+                  },
+                  {
+                    "fieldName": "underpayment",
+                    "displayName": "Underpayment ($)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ]
+    }
+  ]
+}
