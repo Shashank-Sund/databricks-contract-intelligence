@@ -56,6 +56,66 @@ fastest way to understand the moving parts before using your own data.
 
 ---
 
+## Fast path: just the contract chatbot (documents only, no Genie)
+
+If all you want first is the **document Q&A chatbot** over your contracts (skip the
+structured-data / Genie side for now), this is the shortest route. The app runs
+fine with only the document-search tool; the bottom-left Genie panel is just empty
+until you add a space later.
+
+You do **not** need `notebooks/01_extract_contract_terms.py` or a Genie space for
+this — only the search index.
+
+1. **Put your documents in a UC Volume** (PDFs or text). Create one in
+   **Catalog → your schema → Create → Volume** and upload the files.
+2. **Build the search index:** run **`notebooks/02_build_document_search_index.py`**,
+   setting the `volume_path` and `index_name` widgets. Copy the index name it prints.
+3. **Edit `config/app.json`** (and set `APP_CONFIG_PATH: "config/app.json"` in
+   `app.yaml`). The minimal change is to keep only the document tool and point the
+   RAG block at your index:
+
+   ```jsonc
+   {
+     "branding": { "name": "Contract Intelligence", "subtitle": "Your Org" },
+     "agent": {
+       "system_prompt": "You are a contract assistant for <Your Org>. Answer from the document tool and always cite the source.",
+       "tools": [
+         {
+           "name": "search_documents",
+           "backend": "vector_search",
+           "description": "Answer a question from the contract documents using grounded retrieval. Returns an answer with source citations.",
+           "question_description": "A clear, self-contained question about the contracts."
+         }
+         // no genie tool here — add one later when you want structured-data answers
+       ]
+     },
+     "supervisor": { "endpoint": "databricks-claude-sonnet-4-6" },
+     "rag": {
+       "generation_endpoint": "databricks-claude-opus-4-8",
+       "vector_search_index": "<catalog>.<schema>.<your_docs>_index",
+       "num_results": 10,
+       "columns": ["chunk_id", "source_file", "page_id", "text"],
+       "system_prompt": "Answer using ONLY the excerpts; cite the source file and page."
+     },
+     "uc": { "catalog": "<catalog>", "schema": "<schema>", "history_table": "chat_history" },
+     "warehouse_id": "<your_sql_warehouse_id>"
+   }
+   ```
+
+   (`warehouse_id` + `uc.*` are still needed for chat history; `genie.space_id` can
+   stay as the placeholder.) For personalizing branding, prompts, model, AI Gateway,
+   and logging, see **[`CUSTOMIZE.md`](CUSTOMIZE.md)**.
+4. **Deploy (Stage 6 below)** but you only need these resources: your two chat
+   serving endpoints (CAN QUERY), `databricks-gte-large-en` (CAN QUERY), and your
+   warehouse (CAN USE). No Genie space resource. Still grant the app's service
+   principal UC access incl. **MODIFY on `chat_history`**.
+5. Open the app and ask a question about your contracts.
+
+**Add the data/Genie side later** by following Stages 1–4 and adding a `query_data`
+(`backend: "genie"`) tool back into `agent.tools`.
+
+---
+
 ## The stages, in order (for your own data)
 
 ### Stage 1 — Get your data into Unity Catalog

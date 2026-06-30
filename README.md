@@ -71,6 +71,9 @@ persists across reloads.
   **[`examples/northwind-health/README.md`](examples/northwind-health/README.md)**.
 - **Adapt it to your own data:** the click-by-click guide is
   **[`DEPLOY.md`](DEPLOY.md)**.
+- **Just want the document chatbot first?** The shortest route (documents only,
+  no Genie) is the "Fast path" section of
+  **[`DEPLOY.md`](DEPLOY.md#fast-path-just-the-contract-chatbot-documents-only-no-genie)**.
 - **Make it yours (branding, prompts, model, AI Gateway, logging):**
   **[`CUSTOMIZE.md`](CUSTOMIZE.md)**.
 - **The notebooks you run:** [`notebooks/`](notebooks/) —
