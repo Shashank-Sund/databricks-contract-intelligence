@@ -127,6 +127,22 @@ Also set the app's **user_api_scopes** so OBO tokens carry the right scopes:
 > ⚠️ If you later edit the app via CLI/API, always include **all** resources in
 > the call — a partial update wipes the ones you omit.
 
+**Grant the app's service principal Unity Catalog access.** The resources above
+cover the model/warehouse/Genie endpoints, but the app also needs UC grants on
+your data and its history table. Find the service principal id on the app's page,
+then (as a catalog owner/admin) run:
+
+```sql
+-- replace <sp> with the app's service principal id, and your catalog/schema
+GRANT USE CATALOG ON CATALOG <catalog>                       TO `<sp>`;
+GRANT USE SCHEMA  ON SCHEMA  <catalog>.<schema>              TO `<sp>`;
+GRANT SELECT      ON SCHEMA  <catalog>.<schema>              TO `<sp>`;  -- data (SP fallback path)
+GRANT MODIFY      ON TABLE   <catalog>.<schema>.chat_history TO `<sp>`;  -- so chat history persists
+```
+
+`MODIFY` on `chat_history` is what makes conversation history save. **Without it,
+turns are written nowhere and the history list is empty after you reload the app.**
+
 Click **Deploy**, wait for **Running**, open the app URL. You sign in with SSO.
 
 ### Stage 7 — Test
@@ -184,3 +200,4 @@ branding/identity, the system prompts, the model, AI Gateway, or logging, see
 | "No relevant document text found" | The Vector Search index is still building, or `rag.vector_search_index` is wrong. |
 | Agent uses generic tool names / ignores your prompt | `APP_CONFIG_PATH` isn't resolving — confirm it points at your config (relative paths resolve from the repo root). |
 | Each user sees the same data under OBO | They lack per-user UC grants or `CAN RUN` on the space; or `AUTH_MODE` is `service_principal`. |
+| Chat history is empty after you exit and reopen | The app's service principal lacks **MODIFY** on the `chat_history` table — grant it (Stage 6). |
