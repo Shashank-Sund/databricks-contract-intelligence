@@ -58,6 +58,19 @@ function toolLabel(name: string) {
   return { label: name, icon: Sparkles, color: 'text-neutral-500' };
 }
 
+function useMinWidth(px: number) {
+  const query = `(min-width: ${px}px)`;
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setMatch(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [query]);
+  return match;
+}
+
 export function ChatPage() {
   const [cfg, setCfg] = useState<AppCfg>(FALLBACK_CFG);
   const [email, setEmail] = useState('');
@@ -72,6 +85,7 @@ export function ChatPage() {
   const [spacesOpen, setSpacesOpen] = useState(true);
   const [genieSpace, setGenieSpace] = useState<GenieSpace | null>(null); // direct-query panel
   const [navOpen, setNavOpen] = useState(false); // sidebar drawer below the md breakpoint
+  const wide = useMinWidth(640); // shorter composer placeholder below sm so it fits one line
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const atBottomRef = useRef(true);
@@ -414,7 +428,7 @@ export function ChatPage() {
                     onChange={(e) => { setInput(e.target.value); autoGrow(); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                     rows={1}
-                    placeholder="Ask about your data and your documents…"
+                    placeholder={wide ? 'Ask about your data and your documents…' : 'Ask about your data…'}
                     style={{ backgroundColor: 'transparent', color: '#18181b', colorScheme: 'light' }}
                     className="flex-1 resize-none overflow-y-auto bg-transparent py-3.5 pl-5 pr-14 text-[15px] leading-relaxed placeholder:text-neutral-400 focus:outline-none"
                   />
@@ -538,15 +552,15 @@ function GeniePanel({ space, onClose }: { space: GenieSpace; onClose: () => void
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-neutral-200 bg-white px-6 py-3">
-        <Database size={16} className="text-sky-700" />
-        <div className="font-semibold text-neutral-800">{space.title}</div>
-        <span className="rounded bg-sky-50 px-2 py-0.5 text-[11px] text-sky-700">
+        <Database size={16} className="shrink-0 text-sky-700" />
+        <div className="min-w-0 truncate font-semibold text-neutral-800">{space.title}</div>
+        <span className="hidden shrink-0 whitespace-nowrap rounded bg-sky-50 sm:inline px-2 py-0.5 text-[11px] text-sky-700">
           {conversationId ? 'Genie chat · multi-turn' : 'Genie chat'}
         </span>
         <button
           onClick={newConversation}
           disabled={loading || turns.length === 0}
-          className="ml-auto rounded-md px-2 py-1 text-[12px] text-neutral-500 hover:bg-neutral-100 disabled:opacity-40"
+          className="ml-auto shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[12px] text-neutral-500 hover:bg-neutral-100 disabled:opacity-40"
           title="Start a new Genie conversation"
         >
           New conversation

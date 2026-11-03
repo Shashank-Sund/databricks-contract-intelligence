@@ -89,6 +89,7 @@ test.describe('static demo', () => {
     await expect(page.getByRole('heading', { name: 'Contract Intelligence' })).toBeVisible();
     await expect(page.getByText('demo.user@example.com')).toHaveCount(1);
     await expect(page.locator('aside')).toBeVisible();
+    await expect(page.locator('main textarea')).toHaveAttribute('placeholder', 'Ask about your data and your documents…');
     await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
     await expectBannerClear(page);
     await page.screenshot({ path: path.join(SHOTS, 'desktop-home.png') });
@@ -175,6 +176,21 @@ test.describe('phone 390x844', () => {
     await page.goto('/');
     await expect(page.locator('aside')).toBeHidden();
     await expect(page.getByRole('button', { name: 'Open menu' })).toBeVisible();
+    // The composer placeholder must fit on one line of the one-row textarea.
+    const composer = page.locator('main textarea');
+    await expect(composer).toHaveAttribute('placeholder', 'Ask about your data…');
+    const fits = await composer.evaluate((el) => {
+      const probe = document.createElement('span');
+      const cs = getComputedStyle(el);
+      probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${cs.font};letter-spacing:${cs.letterSpacing}`;
+      probe.textContent = (el as HTMLTextAreaElement).placeholder;
+      document.body.appendChild(probe);
+      const need = probe.getBoundingClientRect().width;
+      probe.remove();
+      const room = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      return { need, room };
+    });
+    expect(fits.need, `placeholder width ${JSON.stringify(fits)}`).toBeLessThanOrEqual(fits.room);
     await page.screenshot({ path: path.join(SHOTS, 'phone-home.png') });
     await expectNoHorizontalScroll(page, 'home');
     await expectBannerClear(page);
