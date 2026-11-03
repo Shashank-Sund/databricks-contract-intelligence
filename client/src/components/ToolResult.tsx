@@ -31,7 +31,7 @@ function GenieTable({ ui }: { ui: GenieUI }) {
       <div className="flex items-center gap-2 border-b border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800">
         <Database size={14} /> Genie · your data
         {typeof ui.row_count === 'number' && (
-          <span className="ml-auto font-normal text-sky-600">{ui.row_count} rows</span>
+          <span className="ml-auto font-normal text-sky-700">{ui.row_count} rows</span>
         )}
       </div>
       {ui.error ? (
@@ -39,7 +39,7 @@ function GenieTable({ ui }: { ui: GenieUI }) {
       ) : (
         <>
           {cols.length > 0 && rows.length > 0 && (
-            <div className="max-h-80 overflow-auto">
+            <div className="max-h-80 overflow-auto" tabIndex={0} role="region" aria-label="Query results">
               <table className="w-full border-collapse text-xs">
                 <thead className="sticky top-0 bg-white">
                   <tr>
@@ -74,7 +74,7 @@ function GenieTable({ ui }: { ui: GenieUI }) {
                 <Code2 size={13} /> {showSql ? 'Hide' : 'View'} generated SQL
               </button>
               {showSql && (
-                <pre className="max-h-56 overflow-auto bg-neutral-900 px-3 py-2 text-[11px] leading-relaxed text-neutral-100">
+                <pre tabIndex={0} aria-label="Generated SQL" className="max-h-56 overflow-auto bg-neutral-900 px-3 py-2 text-[11px] leading-relaxed text-neutral-100">
                   {ui.sql}
                 </pre>
               )}
@@ -107,7 +107,7 @@ function ContractCard({ ui }: { ui: ContractUI }) {
                 <FileText size={11} className="opacity-60" />
                 <span className="max-w-[220px] truncate">{c.source_file}</span>
                 {c.page_id !== undefined && c.page_id !== null && c.page_id !== '' && (
-                  <span className="text-amber-500">p{String(c.page_id)}</span>
+                  <span className="text-amber-700">p{String(c.page_id)}</span>
                 )}
               </span>
             ))}

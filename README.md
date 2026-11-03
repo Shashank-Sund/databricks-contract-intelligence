@@ -1,5 +1,9 @@
 # Contract Intelligence
 
+**Live demo:** [d7748acndwx67.cloudfront.net](https://d7748acndwx67.cloudfront.net).
+It runs in your browser with synthetic data and no backend, so it answers a few
+scripted questions only (see [Static demo](#static-demo)).
+
 A config-driven AI assistant you deploy as a **Databricks App** inside your own
 workspace. You ask plain questions and it answers using two things at once:
 
@@ -79,6 +83,30 @@ persists across reloads.
 - **The notebooks you run:** [`notebooks/`](notebooks/) —
   `01_extract_contract_terms.py`, `02_build_document_search_index.py`,
   `03_create_genie_space.py`.
+
+## Static demo
+
+The live demo is the normal React UI built in mock mode: `VITE_DEMO=static`
+swaps the API for an in-browser stand-in that replays the synthetic Northwind
+Health story (code in `client/src/demo/`). The default build and the deployed
+Databricks App do not include it.
+
+```bash
+cd client && npm ci
+npm test                       # Vitest for the mock API
+npm run build:demo             # writes client/dist (gitignored)
+npx playwright install chromium   # once (or set PW_CHANNEL=chrome)
+npm run e2e                    # Playwright + axe against a local preview
+BASE_URL=https://<your-distribution>.cloudfront.net npm run e2e
+
+# Host it on S3 + CloudFront (private bucket, OAC, security headers):
+scripts/deploy_static_demo.sh [blocklist.txt]   # build, scan, deploy, upload
+scripts/teardown_static_demo.sh                 # empty the bucket, delete the stack
+```
+
+The stack is `deploy/aws/static-demo.cfn.yaml`. `scripts/scan_bundle.sh` checks
+the bundle for workspace hosts, tokens, real emails and an optional private
+list of names before anything is uploaded.
 
 ## Repo structure
 
