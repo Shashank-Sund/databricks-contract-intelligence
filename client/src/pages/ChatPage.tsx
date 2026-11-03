@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   ArrowUp, Plus, Loader2, MessageSquare, Database, FileText,
-  Sparkles, X, ChevronDown, ChevronRight,
+  Sparkles, X, ChevronDown, ChevronRight, Menu,
 } from 'lucide-react';
 import { MD } from '../components/Markdown';
 import { ToolResult, ToolUI } from '../components/ToolResult';
@@ -52,9 +52,9 @@ const FALLBACK_SUGGESTIONS = [
 function toolLabel(name: string) {
   const n = name.toLowerCase();
   if (n.includes('genie') || n.includes('data') || n.includes('query'))
-    return { label: 'Genie · querying your data', icon: Database, color: 'text-sky-600' };
+    return { label: 'Genie · querying your data', icon: Database, color: 'text-sky-700' };
   if (n.includes('search') || n.includes('document') || n.includes('contract') || n.includes('doc'))
-    return { label: 'Searching your documents', icon: FileText, color: 'text-amber-600' };
+    return { label: 'Searching your documents', icon: FileText, color: 'text-amber-700' };
   return { label: name, icon: Sparkles, color: 'text-neutral-500' };
 }
 
@@ -71,10 +71,40 @@ export function ChatPage() {
   const [defaultSpaceId, setDefaultSpaceId] = useState<string | null>(null);
   const [spacesOpen, setSpacesOpen] = useState(true);
   const [genieSpace, setGenieSpace] = useState<GenieSpace | null>(null); // direct-query panel
+  const [navOpen, setNavOpen] = useState(false); // sidebar drawer below the md breakpoint
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const atBottomRef = useRef(true);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Phone drawer: focus moves into it, Tab stays inside, Escape closes it and
+  // focus returns to the menu button.
+  useEffect(() => {
+    if (!navOpen) return;
+    const nav = navRef.current;
+    const focusables = () =>
+      Array.from(nav?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]') || []);
+    focusables()[0]?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { e.preventDefault(); closeNav(); return; }
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [navOpen]);
+
+  function closeNav() {
+    setNavOpen(false);
+    menuBtnRef.current?.focus();
+  }
 
   useEffect(() => {
     fetch('/api/config/app').then((r) => r.json()).then((c: AppCfg) => setCfg(c)).catch(() => {});
@@ -115,6 +145,7 @@ export function ChatPage() {
   }
 
   function newChat() {
+    setNavOpen(false);
     setMessages([]);
     setConvId(null);
     setGenieSpace(null);
@@ -142,6 +173,7 @@ export function ChatPage() {
   }
 
   async function loadConversation(id: string) {
+    setNavOpen(false);
     setConvId(id);
     setGenieSpace(null);
     setLoadingConv(id);
@@ -240,8 +272,15 @@ export function ChatPage() {
 
   return (
     <div className="flex h-screen bg-neutral-50 text-neutral-900">
-      {/* Sidebar */}
-      <aside className="flex w-72 flex-col border-r border-neutral-200 bg-white">
+      {/* Sidebar: always shown from md up; below md it is a drawer opened from the menu button */}
+      {navOpen && (
+        <div className="fixed inset-0 z-[55] bg-black/30 md:hidden" onClick={closeNav} aria-hidden="true" />
+      )}
+      <aside
+        id="sidebar-nav"
+        ref={navRef}
+        className={`${navOpen ? 'fixed inset-y-0 left-0 z-[60] flex shadow-xl' : 'hidden'} w-72 flex-col border-r border-neutral-200 bg-white md:static md:z-auto md:flex md:shadow-none`}
+      >
         <button
           onClick={newChat}
           className="mx-3 mt-4 flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
@@ -250,9 +289,9 @@ export function ChatPage() {
         </button>
 
         {/* Conversation history */}
-        <div className="mt-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Recent</div>
+        <div className="mt-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Recent</div>
         <div className="mt-1 flex-1 overflow-y-auto px-2">
-          {convs.length === 0 && <div className="px-2 py-2 text-xs text-neutral-400">No conversations yet.</div>}
+          {convs.length === 0 && <div className="px-2 py-2 text-xs text-neutral-500">No conversations yet.</div>}
           {convs.map((c) => (
             <button
               key={c.conversation_id}
@@ -275,18 +314,18 @@ export function ChatPage() {
         <div className="border-t border-neutral-200">
           <button
             onClick={() => setSpacesOpen((v) => !v)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hover:text-neutral-600"
+            className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500 hover:text-neutral-700"
           >
             {spacesOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
             <Database size={13} /> Genie spaces
           </button>
           {spacesOpen && (
             <div className="max-h-56 overflow-y-auto px-2 pb-2">
-              {spaces.length === 0 && <div className="px-2 py-1 text-xs text-neutral-400">No accessible spaces.</div>}
+              {spaces.length === 0 && <div className="px-2 py-1 text-xs text-neutral-500">No accessible spaces.</div>}
               {spaces.map((s) => (
                 <button
                   key={s.space_id}
-                  onClick={() => { setGenieSpace(s); setMessages([]); }}
+                  onClick={() => { setGenieSpace(s); setMessages([]); setNavOpen(false); }}
                   title={s.description || s.title}
                   className={`mb-0.5 flex w-full items-center gap-2 truncate rounded-md px-2 py-1.5 text-left text-xs hover:bg-sky-50 ${
                     genieSpace?.space_id === s.space_id ? 'bg-sky-50 text-sky-700' : 'text-neutral-600'
@@ -294,7 +333,7 @@ export function ChatPage() {
                 >
                   <Database size={12} className="shrink-0 text-sky-500" />
                   <span className="truncate">{s.title}</span>
-                  {s.space_id === defaultSpaceId && <span className="ml-auto rounded bg-neutral-100 px-1 text-[9px] text-neutral-500">chat</span>}
+                  {s.space_id === defaultSpaceId && <span className="ml-auto rounded bg-neutral-100 px-1 text-[9px] text-neutral-600">chat</span>}
                 </button>
               ))}
             </div>
@@ -307,7 +346,20 @@ export function ChatPage() {
       </aside>
 
       {/* Main */}
-      <main className="flex flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-2 border-b border-neutral-200 bg-white px-3 py-2 md:hidden">
+          <button
+            ref={menuBtnRef}
+            onClick={() => setNavOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={navOpen}
+            aria-controls="sidebar-nav"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-700 hover:bg-neutral-100"
+          >
+            <Menu size={18} />
+          </button>
+          <span className="truncate text-sm font-semibold text-neutral-800">{brand}</span>
+        </div>
         {genieSpace ? (
           <GeniePanel space={genieSpace} onClose={() => setGenieSpace(null)} />
         ) : (
@@ -375,7 +427,7 @@ export function ChatPage() {
                     {streaming ? <Loader2 size={17} className="animate-spin" /> : <ArrowUp size={17} />}
                   </button>
                 </div>
-                <div className="mt-2 text-center text-[11px] text-neutral-400">
+                <div className="mt-2 text-center text-[11px] text-neutral-500">
                   Runs in your tenant under your Unity Catalog permissions.{cfg.branding?.subtitle ? ` ${cfg.branding.subtitle}` : ''}
                 </div>
               </div>
@@ -404,7 +456,7 @@ function AssistantBubble({ m }: { m: Msg }) {
               <div className={`flex items-center gap-2 text-xs font-medium ${meta.color}`}>
                 <Icon size={13} />
                 {meta.label}
-                {t.question && <span className="truncate text-neutral-400">: {t.question}</span>}
+                {t.question && <span className="truncate text-neutral-500">: {t.question}</span>}
                 {!t.ui && m.status !== 'done' && <Loader2 size={12} className="animate-spin" />}
               </div>
               {t.ui && <ToolResult ui={t.ui} />}
@@ -415,7 +467,7 @@ function AssistantBubble({ m }: { m: Msg }) {
         {/* Answer — borderless, flows on the page (modern chat style) */}
         {(m.content || showThinking) &&
           (showThinking && !m.content ? (
-            <div className="flex items-center gap-2 py-1 text-sm text-neutral-400">
+            <div className="flex items-center gap-2 py-1 text-sm text-neutral-500">
               <Loader2 size={14} className="animate-spin" /> Thinking…
             </div>
           ) : (
@@ -486,7 +538,7 @@ function GeniePanel({ space, onClose }: { space: GenieSpace; onClose: () => void
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-neutral-200 bg-white px-6 py-3">
-        <Database size={16} className="text-sky-600" />
+        <Database size={16} className="text-sky-700" />
         <div className="font-semibold text-neutral-800">{space.title}</div>
         <span className="rounded bg-sky-50 px-2 py-0.5 text-[11px] text-sky-700">
           {conversationId ? 'Genie chat · multi-turn' : 'Genie chat'}
@@ -506,7 +558,7 @@ function GeniePanel({ space, onClose }: { space: GenieSpace; onClose: () => void
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="mx-auto max-w-3xl space-y-5">
           {turns.length === 0 && !loading && (
-            <div className="text-sm text-neutral-400">
+            <div className="text-sm text-neutral-500">
               {space.description
                 ? <span className="whitespace-pre-wrap">{space.description}</span>
                 : 'Ask this space a question. Follow-ups keep the conversation context, so you can drill down step by step.'}
@@ -515,7 +567,7 @@ function GeniePanel({ space, onClose }: { space: GenieSpace; onClose: () => void
           {turns.map((turn, i) =>
             turn.role === 'user' ? (
               <div key={i} className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-sky-600 px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm">{turn.text}</div>
+                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-sky-700 px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm">{turn.text}</div>
               </div>
             ) : (
               <div key={i} className="space-y-3">
@@ -529,7 +581,7 @@ function GeniePanel({ space, onClose }: { space: GenieSpace; onClose: () => void
             )
           )}
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-neutral-400">
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
               <Loader2 size={14} className="animate-spin" /> Running query in Genie…
             </div>
           )}
