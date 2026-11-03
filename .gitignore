@@ -63,3 +63,7 @@ client_old_backup/
 
 # Example instance configs (must ship in the repo)
 !examples/**/config.json
+
+# Playwright output
+client/test-results/
+client/playwright-report/
