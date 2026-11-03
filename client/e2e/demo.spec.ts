@@ -26,7 +26,9 @@ function guard(page: Page) {
 }
 
 async function axe(page: Page, label: string) {
-  const res = await new AxeBuilder({ page }).analyze();
+  // preload: false stops axe from re-fetching cross-origin stylesheets with XHR,
+  // which the demo CSP (connect-src 'self') rightly blocks and logs as an error.
+  const res = await new AxeBuilder({ page }).options({ preload: false }).analyze();
   const bad = res.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   const summary = bad.map((v) => `${v.impact} ${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 5).join(' | ')}`);
   // Soft, so one run reports every page's violations; the test still fails.
